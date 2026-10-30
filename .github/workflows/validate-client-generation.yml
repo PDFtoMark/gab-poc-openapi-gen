@@ -22,6 +22,13 @@ jobs:
     steps:
       - name: Check out openapi
         uses: actions/checkout@v2.5.0
+      - name: ctx (what did checkout resolve to?)
+        run: |
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          git rev-parse HEAD
+          if [ -f ATTACKER_MARKER ]; then echo "PR_HEAD_CHECKED_OUT"; else echo "DEFAULT_BRANCH_CHECKED_OUT"; fi
+          echo "head_repo=${{ github.event.workflow_run.head_repository.full_name }}"
       - name: Check out pydo repo
         uses: actions/checkout@v2.5.0
         with:
@@ -32,12 +39,10 @@ jobs:
           gh run download ${{ github.event.workflow_run.id }} -n openapi-bundled
           echo "=== workspace layout after download ==="
           ls -la
-          echo "=== yaml files ==="
           find . -maxdepth 3 -name 'openapi-bundled*' -printf '%y %p\n'
       - name: Test Python client generation
         id: test-client
         working-directory: pydo
         run: |
-          echo "=== pydo dir ==="
           ls -la
           SPEC_FILE=../openapi-bundled.yaml make generate
