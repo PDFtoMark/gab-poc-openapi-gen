@@ -1,0 +1,43 @@
+name: Validate Client Generation
+on:
+  workflow_run:
+    workflows:
+      - 'Spec PR'
+    types:
+      - completed
+permissions:
+  contents: read
+  statuses: write
+  actions: read
+jobs:
+  validate-client-gen:
+    name: Validate Client Generation
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      target_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Check out openapi
+        uses: actions/checkout@v2.5.0
+      - name: Check out pydo repo
+        uses: actions/checkout@v2.5.0
+        with:
+          repository: PDFtoMark/gab-poc-openapi-gen
+          path: pydo
+      - name: Download PR spec
+        run: |
+          gh run download ${{ github.event.workflow_run.id }} -n openapi-bundled
+          echo "=== workspace layout after download ==="
+          ls -la
+          echo "=== yaml files ==="
+          find . -maxdepth 3 -name 'openapi-bundled*' -printf '%y %p\n'
+      - name: Test Python client generation
+        id: test-client
+        working-directory: pydo
+        run: |
+          echo "=== pydo dir ==="
+          ls -la
+          SPEC_FILE=../openapi-bundled.yaml make generate
