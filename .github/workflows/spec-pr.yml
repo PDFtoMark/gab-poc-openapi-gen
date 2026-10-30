@@ -1,0 +1,27 @@
+name: Spec PR
+# Stand-in for digitalocean/openapi "Spec PR" (pull_request triggered).
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  lint:
+    name: Validate spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run linter
+        run: echo lint-ok
+  bundle-spec:
+    name: Bundle Spec
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bundle
+        run: |
+          mkdir -p tests
+          printf 'openapi: 3.0.0\ninfo:\n  title: poc\n' > tests/openapi-bundled.yaml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openapi-bundled
+          path: tests/openapi-bundled.yaml
